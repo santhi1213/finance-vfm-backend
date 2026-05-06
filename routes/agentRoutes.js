@@ -1,36 +1,3 @@
-// const express = require('express');
-// const router = express.Router();
-// const {
-//   createAgent,
-//   getAllAgents,
-//   getAgentById,
-//   updateAgent,
-//   deleteAgent,
-//   hardDeleteAgent,
-//   toggleAgentStatus,
-//   getAgentsByDepartment
-// } = require('../controllers/agentController');
-
-// // Public routes - no authentication required
-// router.route('/')
-//   .get(getAllAgents)
-//   .post(createAgent);
-
-// router.route('/:id')
-//   .get(getAgentById)
-//   .put(updateAgent)
-//   .delete(deleteAgent);
-
-// // Hard delete
-// router.delete('/:id/hard', hardDeleteAgent);
-
-// // Toggle status
-// router.patch('/:id/toggle-status', toggleAgentStatus);
-
-// // Get by department
-// router.get('/department/:department', getAgentsByDepartment);
-
-// module.exports = router;
 const express = require('express');
 const router = express.Router();
 const {
