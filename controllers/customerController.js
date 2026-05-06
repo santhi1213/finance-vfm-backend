@@ -35,12 +35,12 @@ exports.createCustomer = async (req, res) => {
       return ObjectId.isValid(id) && (new ObjectId(id)).toString() === id;
     };
 
-    if (!isValidObjectId(assignedAgent)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid agent ID format. Please select a valid agent from the list.'
-      });
-    }
+    // if (!isValidObjectId(assignedAgent)) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Invalid agent ID format. Please select a valid agent from the list.'
+    //   });
+    // }
 
     // Validate address fields
     if (!address.street || !address.city || !address.state || !address.pincode) {
