@@ -40,6 +40,12 @@ const customerSchema = new mongoose.Schema({
       required: [true, 'State is required'],
       trim: true
     },
+    userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    unique: true
+  },
     pincode: {
       type: String,
       required: [true, 'Pincode is required'],

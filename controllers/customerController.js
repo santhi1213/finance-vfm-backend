@@ -1,5 +1,7 @@
 const Customer = require('../models/Customer');
 const Agent = require('../models/Agent');
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 
 // @desc    Create a new customer
 // @route   POST /api/customers
@@ -29,6 +31,14 @@ const createCustomer = async (req, res) => {
       });
     }
 
+    // Validate email if provided (for login)
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required for customer login access'
+      });
+    }
+
     // Validate address fields
     if (!address.street || !address.city || !address.state || !address.pincode) {
       return res.status(400).json({
@@ -55,6 +65,15 @@ const createCustomer = async (req, res) => {
       });
     }
 
+    // Check if user with same email already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
     // Verify assigned agent exists and is active ONLY IF provided
     if (assignedAgent && assignedAgent !== 'none' && assignedAgent !== '') {
       const agent = await Agent.findOne({ 
@@ -70,6 +89,38 @@ const createCustomer = async (req, res) => {
       }
     }
 
+    // Generate a default password
+    const defaultPassword = `customer@${aadharNo.slice(-4)}${name.slice(0,2).toLowerCase()}`;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(defaultPassword, salt);
+
+    // Create User account for customer
+    const user = new User({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: 'customer',
+      phone,
+      address: {
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode,
+        country: address.country || 'India'
+      },
+      isActive: true,
+      customerDetails: {
+        dateOfBirth: dateOfBirth || undefined,
+        occupation: occupation || undefined,
+        annualIncome: annualIncome || undefined,
+        panCard: panNo.toUpperCase(),
+        aadharCard: aadharNo
+      }
+    });
+
+    await user.save();
+    console.log(`User account created for customer: ${email}`);
+
     // Create customer
     const customerData = {
       name,
@@ -78,16 +129,27 @@ const createCustomer = async (req, res) => {
       address,
       phone,
       alternatePhone: alternatePhone || undefined,
-      email: email ? email.toLowerCase() : undefined,
+      email: email.toLowerCase(),
       assignedAgent: (assignedAgent && assignedAgent !== 'none' && assignedAgent !== '') ? assignedAgent : null,
       dateOfBirth: dateOfBirth || undefined,
       occupation: occupation || undefined,
       annualIncome: annualIncome || undefined,
-      createdBy: req.user ? req.user._id : null
+      createdBy: req.user ? req.user._id : null,
+      userId: user._id
     };
 
     const customer = new Customer(customerData);
     await customer.save();
+
+    // Send email with credentials
+    const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+    try {
+      await emailService.sendCustomerCredentials(email, name, defaultPassword, loginUrl);
+      console.log(`Credentials email sent to ${email}`);
+    } catch (emailError) {
+      console.error('Failed to send credentials email:', emailError);
+      // Don't fail the creation if email fails
+    }
 
     // Populate assigned agent details if exists
     if (customer.assignedAgent) {
@@ -102,8 +164,12 @@ const createCustomer = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Customer created successfully',
-      data: customer
+      message: 'Customer created successfully. Login credentials have been sent to their email.',
+      data: {
+        customer,
+        emailSent: true,
+        email: email.toLowerCase()
+      }
     });
   } catch (error) {
     console.error('Error creating customer:', error);

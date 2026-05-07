@@ -152,4 +152,75 @@ router.patch('/users/:id/toggle-status', protect, adminOnly, async (req, res) =>
   }
 });
 
+
+
+// lskfjsdjklf
+// @desc    Get customer login credentials
+// @route   GET /api/auth/admin/customers/:id/credentials
+router.get('/customers/:id/credentials', protect, adminOnly, async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.params.id).populate('userId', 'email');
+    
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found'
+      });
+    }
+
+    // Note: We cannot retrieve the actual password for security reasons
+    // Instead, provide a password reset link functionality
+    res.status(200).json({
+      success: true,
+      data: {
+        email: customer.email,
+        message: 'Use "Forgot Password" feature to reset password'
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @desc    Reset customer password (admin)
+// @route   POST /api/auth/admin/customers/:id/reset-password
+router.post('/customers/:id/reset-password', protect, adminOnly, async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.params.id).populate('userId');
+    
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found'
+      });
+    }
+
+    // Generate new random password
+    const newPassword = Math.random().toString(36).slice(-8) + '@123';
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update user password
+    await User.findByIdAndUpdate(customer.userId._id, { password: hashedPassword });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        email: customer.email,
+        newPassword: newPassword,
+        message: 'Password reset successful'
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
 module.exports = router;

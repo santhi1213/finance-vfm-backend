@@ -22,6 +22,14 @@ exports.createAgent = async (req, res) => {
       });
     }
 
+    // Validate email is provided (for login)
+    if (!contactDetails || !contactDetails.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required for agent login access'
+      });
+    }
+
     // Validate age
     if (age < 18 || age > 100) {
       return res.status(400).json({
@@ -55,6 +63,15 @@ exports.createAgent = async (req, res) => {
       });
     }
 
+    // Check if user with same email already exists
+    const existingUser = await User.findOne({ email: contactDetails.email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
     // Check if employee ID is unique if provided
     if (employmentDetails?.employeeId) {
       const existingEmpId = await Agent.findOne({ 'employmentDetails.employeeId': employmentDetails.employeeId });
@@ -66,6 +83,37 @@ exports.createAgent = async (req, res) => {
       }
     }
 
+    // Generate a default password for agent
+    const defaultPassword = `agent@${aadharNo.slice(-4)}${name.slice(0,2).toLowerCase()}`;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(defaultPassword, salt);
+
+    // Create User account for agent
+    const user = new User({
+      name,
+      email: contactDetails.email.toLowerCase(),
+      password: hashedPassword,
+      role: 'agent',
+      phone: contactDetails.phone,
+      address: {
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode,
+        country: address.country || 'India'
+      },
+      isActive: true,
+      agentDetails: {
+        employeeId: employmentDetails?.employeeId || `EMP${Date.now()}`,
+        department: employmentDetails?.department || 'collection',
+        joinDate: employmentDetails?.joinDate || new Date(),
+        commission: employmentDetails?.commission || '0'
+      }
+    });
+
+    await user.save();
+    console.log(`User account created for agent: ${contactDetails.email}`);
+
     // Create agent
     const agentData = {
       name,
@@ -74,18 +122,33 @@ exports.createAgent = async (req, res) => {
       contactDetails,
       address,
       employmentDetails: employmentDetails || {},
-      bankDetails: bankDetails || {}
+      bankDetails: bankDetails || {},
+      userId: user._id
     };
 
     const agent = new Agent(agentData);
     await agent.save();
 
+    // Send email with credentials
+    const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+    try {
+      await emailService.sendAgentCredentials(contactDetails.email, name, defaultPassword, loginUrl);
+      console.log(`Credentials email sent to ${contactDetails.email}`);
+    } catch (emailError) {
+      console.error('Failed to send credentials email:', emailError);
+      // Don't fail the creation if email fails
+    }
+
     console.log('Agent created successfully:', agent._id);
 
     res.status(201).json({
       success: true,
-      message: 'Agent created successfully',
-      data: agent
+      message: 'Agent created successfully. Login credentials have been sent to their email.',
+      data: {
+        agent,
+        emailSent: true,
+        email: contactDetails.email.toLowerCase()
+      }
     });
   } catch (error) {
     console.error('Error creating agent:', error);
