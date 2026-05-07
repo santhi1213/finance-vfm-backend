@@ -1,5 +1,8 @@
 const Agent = require('../models/Agent');
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const emailService = require('../services/emailService');
+const mongoose = require('mongoose');
 
 exports.createAgent = async (req, res) => {
   try {
