@@ -1,4 +1,5 @@
 const Agent = require('../models/Agent');
+const User = require('../models/User');
 
 exports.createAgent = async (req, res) => {
   try {
