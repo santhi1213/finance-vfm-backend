@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const customerSchema = new mongoose.Schema({
-  // Basic Information
   name: {
     type: String,
     required: [true, 'Customer name is required'],
@@ -22,8 +21,6 @@ const customerSchema = new mongoose.Schema({
     uppercase: true,
     match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Please enter a valid PAN number']
   },
-  
-  // Address Details
   address: {
     street: {
       type: String,
@@ -40,12 +37,6 @@ const customerSchema = new mongoose.Schema({
       required: [true, 'State is required'],
       trim: true
     },
-    userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-    unique: true
-  },
     pincode: {
       type: String,
       required: [true, 'Pincode is required'],
@@ -58,8 +49,6 @@ const customerSchema = new mongoose.Schema({
       trim: true
     }
   },
-  
-  // Contact Information
   phone: {
     type: String,
     required: [true, 'Phone number is required'],
@@ -72,20 +61,23 @@ const customerSchema = new mongoose.Schema({
   },
   email: {
     type: String,
+    required: [true, 'Email is required'],
+    unique: true,
     trim: true,
     lowercase: true,
     match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
-  
-  // Assigned Collection Agent (NOW OPTIONAL)
-  assignedAgent: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false,  // Changed from true to false
+    required: true,
+    unique: true
+  },
+  assignedAgent: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Agent',
     default: null
   },
-  
-  // Additional Details
   dateOfBirth: {
     type: Date
   },
@@ -94,17 +86,13 @@ const customerSchema = new mongoose.Schema({
     trim: true
   },
   annualIncome: {
-    type: String, // Stored as string for consistency
+    type: String,
     trim: true
   },
-  
-  // Status
   isActive: {
     type: Boolean,
     default: true
   },
-  
-  // Metadata
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -117,10 +105,11 @@ const customerSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes for better query performance
 customerSchema.index({ name: 'text', email: 'text' });
 customerSchema.index({ aadharNo: 1 }, { unique: true });
 customerSchema.index({ panNo: 1 }, { unique: true });
+customerSchema.index({ email: 1 }, { unique: true });
+customerSchema.index({ userId: 1 }, { unique: true });
 customerSchema.index({ assignedAgent: 1 });
 customerSchema.index({ isActive: 1 });
 
