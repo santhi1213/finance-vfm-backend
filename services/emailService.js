@@ -136,66 +136,6 @@ const sendAgentCredentials = async (email, name, password, loginUrl) => {
   return await transporter.sendMail(mailOptions);
 };
 
-// Send payment reminder email
-// const sendPaymentReminder = async (email, name, emiAmount, dueDate, vehicleName) => {
-//   const transporter = getTransporter();
-//   if (!transporter) {
-//     console.error('Email transporter not configured');
-//     return { success: false };
-//   }
-
-//   const formattedDueDate = new Date(dueDate).toLocaleDateString('en-IN');
-//   const formattedAmount = new Intl.NumberFormat('en-IN', {
-//     style: 'currency',
-//     currency: 'INR'
-//   }).format(emiAmount);
-
-//   const mailOptions = {
-//     from: `"Vehicle Management System" <${process.env.EMAIL_USER || 'noreply@vehiclefinance.com'}>`,
-//     to: email,
-//     subject: 'EMI Payment Reminder - Due Soon',
-//     html: `
-//       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-//         <div style="text-align: center; margin-bottom: 30px;">
-//           <h2 style="color: #f59e0b;">EMI Payment Reminder</h2>
-//         </div>
-        
-//         <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-//           <p><strong>Dear ${name},</strong></p>
-//           <p>This is a reminder that your EMI payment is due soon.</p>
-          
-//           <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
-//             <p style="margin: 5px 0;"><strong>Vehicle:</strong> ${vehicleName}</p>
-//             <p style="margin: 5px 0;"><strong>Amount Due:</strong> <span style="color: #dc2626; font-weight: bold;">${formattedAmount}</span></p>
-//             <p style="margin: 5px 0;"><strong>Due Date:</strong> ${formattedDueDate}</p>
-//           </div>
-          
-//           <p>Please ensure timely payment to avoid late fees.</p>
-//         </div>
-        
-//         <div style="text-align: center;">
-//           <a href="${process.env.FRONTEND_URL}/customer/loans" style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-//             Make Payment
-//           </a>
-//         </div>
-        
-//         <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #999;">
-//           <p>&copy; ${new Date().getFullYear()} Vehicle Management System</p>
-//         </div>
-//       </div>
-//     `
-//   };
-
-//   try {
-//     const info = await transporter.sendMail(mailOptions);
-//     console.log('Reminder email sent:', info.messageId);
-//     return { success: true };
-//   } catch (error) {
-//     console.error('Reminder email failed:', error);
-//     return { success: false };
-//   }
-// };
-
 const sendPaymentReminder = async (email, name, emiAmount, dueDate, vehicleName) => {
   const transporter = getTransporter();
   
