@@ -134,7 +134,7 @@ exports.createAgent = async (req, res) => {
     await agent.save();
 
     // Send email with credentials
-    const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+    const loginUrl = `${process.env.FRONTEND_URL || 'https://finance-vfm-backend.onrender.com'}/login`;
     try {
       await emailService.sendAgentCredentials(contactDetails.email, name, defaultPassword, loginUrl);
       console.log(`Credentials email sent to ${contactDetails.email}`);

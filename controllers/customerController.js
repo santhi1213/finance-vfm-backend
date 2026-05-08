@@ -133,7 +133,7 @@ const createCustomer = async (req, res) => {
     console.log(`✅ Customer created with ID: ${customer._id}`);
 
     // STEP 3: Send email
-    const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/login`;
+    const loginUrl = `${process.env.FRONTEND_URL || 'https://finance-vfm-backend.onrender.com'}/login`;
     let emailSent = false;
     
     try {

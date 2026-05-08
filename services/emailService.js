@@ -221,7 +221,7 @@ const sendPaymentReminder = async (email, name, emiAmount, dueDate, vehicleName)
     maximumFractionDigits: 0
   }).format(emiAmount);
 
-  const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/customer/loans`;
+  const loginUrl = `${process.env.FRONTEND_URL || 'https://finance-vfm-backend.onrender.com'}/customer/loans`;
 
   const mailOptions = {
     from: `"Vehicle Management System" <${process.env.EMAIL_USER || 'noreply@vehiclefinance.com'}>`,
