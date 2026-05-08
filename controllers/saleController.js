@@ -123,7 +123,8 @@ exports.createSale = async (req, res) => {
       saleId,
       vehicleId,
       customerId,
-      agentId,
+      // agentId,
+      agentId: agentId && agentId !== 'none' ? agentId : undefined,
       sellingPrice: sellingPrice.toString(),
       paymentType,
       paymentMode: paymentMode || '',
@@ -556,6 +557,45 @@ exports.getSalesStats = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+// controllers/saleController.js - Add this method
+exports.getSalesWithEmisByCustomer = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    
+    // Find all sales for this customer
+    const sales = await Sale.find({ customerId })
+      .populate('vehicleId', 'name model price images')
+      .populate('agentId', 'name phone')
+      .sort({ saleDate: -1 });
+
+    // Get EMIs for each sale
+    const salesWithEmis = await Promise.all(sales.map(async (sale) => {
+      const emis = await EMI.find({ saleId: sale._id })
+        .sort({ installmentNo: 1 });
+      
+      const paidCount = emis.filter(e => e.status === 'Paid').length;
+      const totalCount = emis.length;
+      
+      return {
+        ...sale.toObject(),
+        emis,
+        paidCount,
+        totalCount,
+        progress: totalCount > 0 ? (paidCount / totalCount) * 100 : 0
+      };
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: salesWithEmis.length,
+      data: salesWithEmis
+    });
+  } catch (error) {
+    console.error('Error fetching customer sales with EMIs:', error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 

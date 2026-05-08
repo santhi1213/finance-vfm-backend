@@ -13,6 +13,7 @@ const agentRoutes = require('./routes/agentRoutes');
 const saleRoutes = require('./routes/saleRoutes');
 const emiRoutes = require('./routes/emiRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const customerRoleRoutes = require('./routes/customerRoutes1');
 const agentRoleRoutes = require('./routes/agentRoutes1');
@@ -82,6 +83,7 @@ app.use('/api/agent', agentRoleRoutes);
 console.log('  ✅ /api/agent');
 app.use('/api/notifications', notificationRoutes);
 console.log('  ✅ /api/notifications');
+app.use('/api/payments', paymentRoutes);
 
 // Home route
 app.get('/', (req, res) => {

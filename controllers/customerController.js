@@ -33,7 +33,6 @@ const createCustomer = async (req, res) => {
       });
     }
 
-    // Validate email
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -49,56 +48,36 @@ const createCustomer = async (req, res) => {
       });
     }
 
-    // Check if customer with same Aadhar exists
+    // Check for existing records
     const existingAadhar = await Customer.findOne({ aadharNo });
     if (existingAadhar) {
-      return res.status(400).json({
-        success: false,
-        message: 'Customer with this Aadhar number already exists'
-      });
+      return res.status(400).json({ success: false, message: 'Customer with this Aadhar number already exists' });
     }
 
-    // Check if customer with same PAN exists
     const existingPAN = await Customer.findOne({ panNo: panNo.toUpperCase() });
     if (existingPAN) {
-      return res.status(400).json({
-        success: false,
-        message: 'Customer with this PAN number already exists'
-      });
+      return res.status(400).json({ success: false, message: 'Customer with this PAN number already exists' });
     }
 
-    // Check if user with same email already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'User with this email already exists'
-      });
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
     }
 
     // Verify assigned agent exists if provided
     let agentId = null;
     if (assignedAgent && assignedAgent !== 'none' && assignedAgent !== '') {
-      const agent = await Agent.findOne({ 
-        _id: assignedAgent, 
-        isActive: true 
-      });
+      const agent = await Agent.findOne({ _id: assignedAgent, isActive: true });
       if (!agent) {
-        return res.status(400).json({
-          success: false,
-          message: 'Assigned agent not found or is not active'
-        });
+        return res.status(400).json({ success: false, message: 'Assigned agent not found or is not active' });
       }
       agentId = assignedAgent;
     }
 
     // Generate default password
     const defaultPassword = `customer@${aadharNo.slice(-4)}${name.slice(0,2).toLowerCase()}`;
-    console.log('Generated password:', defaultPassword);
-    
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(defaultPassword, salt);
-    console.log('Password hashed successfully');
 
     // STEP 1: Create User account
     const user = new User({
@@ -125,9 +104,9 @@ const createCustomer = async (req, res) => {
     });
 
     await user.save();
-    console.log(`✅ User created with ID: ${user._id} and email: ${user.email}`);
+    console.log(`✅ User created with ID: ${user._id}`);
 
-    // STEP 2: Create Customer with userId reference
+    // STEP 2: Create Customer with userId reference - CORRECTED
     const customer = new Customer({
       name,
       aadharNo,
@@ -143,7 +122,7 @@ const createCustomer = async (req, res) => {
       alternatePhone: alternatePhone || undefined,
       email: email.toLowerCase(),
       assignedAgent: agentId,
-      userId: user._id,  // Link to User
+      userId: user._id,  // IMPORTANT: Set userId at root level, NOT inside address
       dateOfBirth: dateOfBirth || undefined,
       occupation: occupation || undefined,
       annualIncome: annualIncome || undefined,
@@ -153,7 +132,7 @@ const createCustomer = async (req, res) => {
     await customer.save();
     console.log(`✅ Customer created with ID: ${customer._id}`);
 
-    // STEP 3: Send email with credentials (optional - won't break creation if fails)
+    // STEP 3: Send email
     const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
     let emailSent = false;
     
@@ -163,10 +142,8 @@ const createCustomer = async (req, res) => {
       emailSent = true;
     } catch (emailError) {
       console.error('❌ Failed to send credentials email:', emailError.message);
-      // Don't fail the creation if email fails
     }
 
-    // STEP 4: Return success response
     res.status(201).json({
       success: true,
       message: 'Customer created successfully. Login credentials have been sent to their email.',
@@ -178,27 +155,19 @@ const createCustomer = async (req, res) => {
           email: customer.email,
           phone: customer.phone,
           userId: user._id
-        },
-        email: email.toLowerCase()
+        }
       }
     });
 
   } catch (error) {
     console.error('❌ Error creating customer:', error);
     
-    // Handle duplicate key error
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
-      return res.status(400).json({
-        success: false,
-        message: `Customer with this ${field} already exists`
-      });
+      return res.status(400).json({ success: false, message: `Customer with this ${field} already exists` });
     }
     
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -376,12 +345,46 @@ const toggleCustomerStatus = async (req, res) => {
   }
 };
 
+// Add this method to customerController.js to update agent assignment
+const updateCustomerAgent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { assignedAgent } = req.body;
+
+    const customer = await Customer.findById(id);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: 'Customer not found' });
+    }
+
+    // Update agent assignment
+    customer.assignedAgent = assignedAgent === 'none' || assignedAgent === '' ? null : assignedAgent;
+    await customer.save();
+
+    // Also update User's customerDetails if needed
+    if (customer.userId) {
+      await User.findByIdAndUpdate(customer.userId, {
+        'customerDetails.assignedAgent': customer.assignedAgent
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Agent assigned successfully',
+      data: customer
+    });
+  } catch (error) {
+    console.error('Error updating customer agent:', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createCustomer,
   getAllCustomers,
   getCustomerById,
   updateCustomer,
   deleteCustomer,
-  toggleCustomerStatus
+  toggleCustomerStatus,
+  updateCustomerAgent
 };
 

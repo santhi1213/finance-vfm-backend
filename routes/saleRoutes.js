@@ -30,5 +30,9 @@ router.route('/:id')
   .put(updateSale)
   .delete(deleteSale);
 
+// router.get('/customer/:customerId/loans', getSalesWithEmisByCustomer);
+router.route('/customer/:customerId/loans')
+  .get(getSalesWithEmisByCustomer);
+
 module.exports = router;
 
