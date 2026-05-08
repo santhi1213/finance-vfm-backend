@@ -107,51 +107,33 @@
 // module.exports = mongoose.model('Customer', customerSchema);
 
 
-
-// models/Customer.js - COMPLETE FIXED VERSION
 const mongoose = require('mongoose');
 
 const customerSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Customer name is required'],
-    trim: true
-  },
-  aadharNo: {
-    type: String,
-    required: [true, 'Aadhar number is required'],
-    unique: true,
-    trim: true,
-    match: [/^\d{12}$/, 'Aadhar number must be 12 digits']
-  },
-  panNo: {
-    type: String,
-    required: [true, 'PAN number is required'],
-    unique: true,
-    trim: true,
-    uppercase: true,
-    match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Please enter a valid PAN number']
-  },
-  // Address - NO userId inside
-  address: {
-    street: { type: String, required: [true, 'Street address is required'], trim: true },
-    city: { type: String, required: [true, 'City is required'], trim: true },
-    state: { type: String, required: [true, 'State is required'], trim: true },
-    pincode: { type: String, required: [true, 'Pincode is required'], trim: true, match: [/^\d{6}$/, 'Pincode must be 6 digits'] },
-    country: { type: String, default: 'India', trim: true }
-  },
-  phone: { type: String, required: [true, 'Phone number is required'], trim: true },
-  alternatePhone: { type: String, trim: true },
-  email: { type: String, required: [true, 'Email is required'], unique: true, trim: true, lowercase: true },
+  name: { type: String, required: true, trim: true },
+  aadharNo: { type: String, required: true, unique: true, trim: true },
+  panNo: { type: String, required: true, unique: true, trim: true, uppercase: true },
   
-  // ✅ userId at ROOT level - CORRECT
+  // ⚠️ IMPORTANT: userId is at ROOT level, NOT inside address
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true,
-    unique: true  // Keep this unique index for proper mapping
+    unique: true 
   },
   
+  // Address object - NO userId inside
+  address: {
+    street: { type: String, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    state: { type: String, required: true, trim: true },
+    pincode: { type: String, required: true, trim: true },
+    country: { type: String, default: 'India', trim: true }
+  },
+  
+  phone: { type: String, required: true, trim: true },
+  alternatePhone: { type: String, trim: true },
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true },
   assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: 'Agent', default: null },
   dateOfBirth: Date,
   occupation: String,
@@ -161,12 +143,28 @@ const customerSchema = new mongoose.Schema({
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
-// Indexes
+// CORRECT INDEXES - NO address.userId
 customerSchema.index({ aadharNo: 1 }, { unique: true });
 customerSchema.index({ panNo: 1 }, { unique: true });
 customerSchema.index({ email: 1 }, { unique: true });
 customerSchema.index({ userId: 1 }, { unique: true });
 customerSchema.index({ assignedAgent: 1 });
 customerSchema.index({ isActive: 1 });
+
+// ✅ IMPORTANT: Ensure no old indexes are created
+// Drop any existing wrong indexes when model compiles
+customerSchema.pre('init', async function() {
+  try {
+    const db = this.constructor.db;
+    const indexes = await db.collection('customers').indexes();
+    const hasBadIndex = indexes.some(idx => idx.name === 'address.userId_1');
+    if (hasBadIndex) {
+      await db.collection('customers').dropIndex('address.userId_1');
+      console.log('✅ Removed bad address.userId_1 index');
+    }
+  } catch (err) {
+    // Index might not exist
+  }
+});
 
 module.exports = mongoose.model('Customer', customerSchema);
