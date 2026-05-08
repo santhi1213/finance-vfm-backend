@@ -393,9 +393,6 @@ exports.getEmiStats = async (req, res) => {
 // @route   POST /api/emis/:id/remind
 exports.sendEmiReminder = async (req, res) => {
   try {
-    // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-    
     const emi = await EMI.findById(req.params.id)
       .populate('customerId', 'name phone email')
       .populate({
@@ -410,22 +407,52 @@ exports.sendEmiReminder = async (req, res) => {
       });
     }
 
-    // Update reminder status
-    emi.reminderSent = true;
-    emi.reminderDate = new Date();
-    await emi.save();
+    // Get customer email
+    const customerEmail = emi.customerId?.email;
+    const customerName = emi.customerId?.name;
+    const vehicleName = emi.saleId?.vehicleId?.name || 'Vehicle';
+    const emiAmount = parseFloat(emi.amount);
+    const dueDate = emi.dueDate;
 
-    // Here you would integrate with your email/SMS service
-    console.log(`Reminder sent for EMI ${emi.emiId}`);
-    console.log(`Customer: ${emi.customerId?.name}`);
-    console.log(`Amount: ₹${emi.amount}`);
-    console.log(`Due Date: ${emi.dueDate.toISOString().split('T')[0]}`);
+    // Check if customer has email
+    if (!customerEmail) {
+      console.log(`No email found for customer: ${customerName}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Customer does not have an email address to send reminder'
+      });
+    }
 
-    res.status(200).json({
-      success: true,
-      message: 'Reminder sent successfully',
-      data: emi
-    });
+    // Send email reminder
+    const emailService = require('../services/emailService');
+    const emailResult = await emailService.sendPaymentReminder(
+      customerEmail,
+      customerName,
+      emiAmount,
+      dueDate,
+      vehicleName
+    );
+
+    if (emailResult.success) {
+      // Update reminder status
+      emi.reminderSent = true;
+      emi.reminderDate = new Date();
+      await emi.save();
+
+      console.log(`Reminder sent for EMI ${emi.emiId} to ${customerEmail}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'Reminder sent successfully',
+        data: emi
+      });
+    } else {
+      console.error('Email sending failed:', emailResult.error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send email reminder. Please check email configuration.'
+      });
+    }
   } catch (error) {
     console.error('Error sending EMI reminder:', error);
     res.status(400).json({

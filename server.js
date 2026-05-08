@@ -182,7 +182,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const customerRoleRoutes = require('./routes/customerRoutes1');
 const agentRoleRoutes = require('./routes/agentRoutes1');
 const notificationRoutes = require('./routes/notificationRoutes');
-const paymentRoutes = require('./routes/paymentRoutes'); // Add this
+const paymentRoutes = require('./routes/paymentRoutes'); 
+const reminderService = require('./services/reminderService');
 
 // Connect to MongoDB
 connectDB();
@@ -235,6 +236,13 @@ app.use('/api/notifications', notificationRoutes);
 console.log('  ✅ /api/notifications');
 app.use('/api/payments', paymentRoutes);
 console.log('  ✅ /api/payments');
+
+if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+  reminderService.startReminderScheduler();
+  console.log('📧 Automated reminder scheduler started');
+} else {
+  console.log('⚠️ Email not configured - reminders disabled');
+}
 
 // Home route
 app.get('/', (req, res) => {
