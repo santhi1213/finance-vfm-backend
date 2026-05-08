@@ -4,8 +4,6 @@ const EMI = require('../models/EMI');
 const Vehicle = require('../models/Vehicle');
 const Notification = require('../models/Notification');
 
-// @desc    Get customer dashboard data
-// @route   GET /api/customer/dashboard
 exports.getDashboard = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -61,8 +59,6 @@ exports.getDashboard = async (req, res) => {
   }
 };
 
-// @desc    Get customer's loans
-// @route   GET /api/customer/loans
 exports.getLoans = async (req, res) => {
   try {
     const customer = await Customer.findOne({ email: req.user.email });
@@ -104,8 +100,6 @@ exports.getLoans = async (req, res) => {
   }
 };
 
-// @desc    Pay EMI (customer self-payment)
-// @route   POST /api/customer/pay-emi/:emiId
 exports.payEmi = async (req, res) => {
   try {
     const { emiId } = req.params;
@@ -178,8 +172,6 @@ exports.payEmi = async (req, res) => {
   }
 };
 
-// @desc    Get customer profile
-// @route   GET /api/customer/profile
 exports.getProfile = async (req, res) => {
   try {
     const customer = await Customer.findOne({ email: req.user.email })
@@ -205,8 +197,6 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-// @desc    Update customer profile
-// @route   PUT /api/customer/profile
 exports.updateProfile = async (req, res) => {
   try {
     const allowedFields = ['phone', 'alternatePhone', 'email', 'address', 'occupation', 'annualIncome'];

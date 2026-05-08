@@ -35,10 +35,6 @@ app.use(cors({
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
-
-// app.options('/api/agents/*', cors());
-// app.options('*', cors()); 
-// Body parsing middleware
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
