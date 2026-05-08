@@ -560,10 +560,12 @@ exports.getSalesStats = async (req, res) => {
   }
 };
 
-// controllers/saleController.js - Add this method
+// controllers/saleController.js - Add this function
 exports.getSalesWithEmisByCustomer = async (req, res) => {
   try {
     const { customerId } = req.params;
+    
+    console.log(`Fetching loans for customer: ${customerId}`);
     
     // Find all sales for this customer
     const sales = await Sale.find({ customerId })
@@ -594,8 +596,11 @@ exports.getSalesWithEmisByCustomer = async (req, res) => {
       data: salesWithEmis
     });
   } catch (error) {
-    console.error('Error fetching customer sales with EMIs:', error);
-    res.status(400).json({ success: false, message: error.message });
+    console.error('Error fetching customer loans:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 

@@ -162,10 +162,10 @@ const createCustomer = async (req, res) => {
   } catch (error) {
     console.error('❌ Error creating customer:', error);
     
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyPattern)[0];
-      return res.status(400).json({ success: false, message: `Customer with this ${field} already exists` });
-    }
+    // if (error.code === 11000) {
+    //   const field = Object.keys(error.keyPattern)[0];
+    //   return res.status(400).json({ success: false, message: `Customer with this ${field} already exists` });
+    // }
     
     res.status(400).json({ success: false, message: error.message });
   }
