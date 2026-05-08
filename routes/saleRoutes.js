@@ -8,7 +8,8 @@ const {
   deleteSale,
   getSalesByCustomer,
   getSalesByAgent,
-  getSalesStats
+  getSalesStats,
+  getSalesWithEmisByCustomer
 } = require('../controllers/saleController');
 
 // Public routes (no authentication required as per your requirement)
